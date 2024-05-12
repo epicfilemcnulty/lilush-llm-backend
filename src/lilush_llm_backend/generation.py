@@ -75,7 +75,6 @@ def MambaQuery(query, sampler, model, tokenizer):
         min_p=sampler['min_p'],
         eos_token_ids=sc,
         cg=True,
-        do_sample=True,
         repetition_penalty = sampler['repetition_penalty'],
     )
     gen_text = tokenizer.decode(output_ids[0], hide_special_tokens=sampler['hide_special_tokens'])

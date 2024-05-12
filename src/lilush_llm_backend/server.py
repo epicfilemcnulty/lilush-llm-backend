@@ -7,7 +7,7 @@ import bottle
 from bottle import Bottle, run, route, request, response
 bottle.BaseRequest.MEMFILE_MAX = 1024 * 1024 * 10
 
-from .loader import LoadExl2Model, LoadTfModel, LoadMambaModel
+from .loader import LoadExl2Model, LoadTfModel, LoadMambaModel, LoadMambaHfModel
 from .generation import Exl2Query, TfQuery, MambaQuery
 
 models = {}
@@ -38,7 +38,11 @@ def load_model():
         models[model_alias] = LoadTfModel(model_dir, context_length, lora_dir, trust_remote_code)
         return {"message": "model loaded"}
     if model_type == "mamba":
-        models[model_alias] = LoadMambaModel(model_dir)
+        hf_format = data.get('hf_format', False)
+        if hf_format:
+            models[model_alias] = LoadMambaHfModel(model_dir)
+        else:
+            models[model_alias] = LoadMambaModel(model_dir)
         return {"message": "model loaded"}
 
 @app.route('/unload', method='DELETE')

@@ -1,5 +1,6 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, MambaForCausalLM
+from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
 from bltzr import Tokenizer
 from peft import PeftModel
 from .mixin import GenerationMixin
@@ -104,7 +105,12 @@ class CustomModelForCausalLM(MambaForCausalLM, GenerationMixin):
                 model_kwargs.pop(key)
         super()._validate_model_kwargs(model_kwargs)
 
-def LoadMambaModel(model_dir):
+def LoadMambaHfModel(model_dir):
     tokenizer = Tokenizer()
     model = CustomModelForCausalLM.from_pretrained(model_dir, torch_dtype=torch.bfloat16).to('cuda')
+    return { "model": model, "tokenizer": tokenizer, "type": "mamba" }
+
+def LoadMambaModel(model_dir):
+    tokenizer = Tokenizer()
+    model = MambaLMHeadModel.from_pretrained(model_dir, device="cuda", dtype=torch.bfloat16)
     return { "model": model, "tokenizer": tokenizer, "type": "mamba" }

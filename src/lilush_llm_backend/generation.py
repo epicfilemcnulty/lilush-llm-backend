@@ -66,15 +66,17 @@ def MambaQuery(query, sampler, model, tokenizer):
  
     input_ids = torch.LongTensor(tokens).unsqueeze(0).cuda()
     prompt_tokens = len(input_ids[0])
-    
     output_ids = model.generate(
         input_ids=input_ids,
         max_length=prompt_tokens + sampler['max_new_tokens'],
         temperature=sampler['temperature'],
+        top_k=sampler['top_k'],
+        top_p=sampler['top_p'],
         min_p=sampler['min_p'],
-        repetition_penalty = sampler['repetition_penalty'],
+        eos_token_ids=sc,
         cg=True,
-        eos_token_ids=sc
+        do_sample=True,
+        repetition_penalty = sampler['repetition_penalty'],
     )
     gen_text = tokenizer.decode(output_ids[0], hide_special_tokens=sampler['hide_special_tokens'])
     old_text = ""

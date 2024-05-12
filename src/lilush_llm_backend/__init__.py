@@ -1,6 +1,6 @@
 """ Lilush LLM Proxy """
 
-__version__ = "0.1.0"
+__version__ = "0.1.3"
 
 from .loader import *
 from .generation import *

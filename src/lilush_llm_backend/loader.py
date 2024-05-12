@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, MambaForCausalLM
 from bltzr import Tokenizer
 from peft import PeftModel
 from .mixin import GenerationMixin
@@ -54,10 +54,57 @@ def LoadTfModel(model_dir, context_length=None, lora_dir=None, trust_remote_code
 
     return { "model": model, "tokenizer": tokenizer, "type": "tf" }
 
-class CustomAutoModelForCausalLM(AutoModelForCausalLM, GenerationMixin):
-    pass
+class CustomModelForCausalLM(MambaForCausalLM, GenerationMixin):
+    def _validate_model_kwargs(self, model_kwargs):
+        # Skip validation for unsupported arguments
+        supported_kwargs = [
+            "max_length",
+            "min_length",
+            "do_sample",
+            "early_stopping",
+            "num_beams",
+            "temperature",
+            "top_k",
+            "top_p",
+            "repetition_penalty",
+            "bad_words_ids",
+            "bos_token_id",
+            "pad_token_id",
+            "eos_token_id",
+            "length_penalty",
+            "no_repeat_ngram_size",
+            "encoder_no_repeat_ngram_size",
+            "num_return_sequences",
+            "max_time",
+            "max_new_tokens",
+            "decoder_start_token_id",
+            "use_cache",
+            "num_beam_groups",
+            "diversity_penalty",
+            "prefix_allowed_tokens_fn",
+            "logits_processor",
+            "renormalize_logits",
+            "stopping_criteria",
+            "constraints",
+            "output_attentions",
+            "output_hidden_states",
+            "output_scores",
+            "return_dict_in_generate",
+            "forced_bos_token_id",
+            "forced_eos_token_id",
+            "remove_invalid_values",
+            "synced_gpus",
+            "exponential_decay_length_penalty",
+            "suppress_tokens",
+            "begin_suppress_tokens",
+            "forced_decoder_ids",
+        ]
+        for key in list(model_kwargs):   # Making a copy of model_kwargs with `list` so we can remove elements from the original
+            if key not in supported_kwargs:
+                model_kwargs.pop(key)
+        super()._validate_model_kwargs(model_kwargs)
 
 def LoadMambaModel(model_dir):
     tokenizer = Tokenizer()
-    model = CustomAutoModelForCausalLM.from_pretrained(model_dir)
+    model = CustomModelForCausalLM.from_pretrained(model_dir).to('cuda')
     return { "model": model, "tokenizer": tokenizer, "type": "mamba" }

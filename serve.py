@@ -1,5 +1,5 @@
 import argparse
-from lilush_llm_proxy import Serve
+from lilush_llm_backend import Serve
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ip", type=str, default="127.0.0.1", required=False)

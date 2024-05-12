@@ -1,0 +1,3 @@
+# Yet another LLM backend...
+
+The backend part for the Lilush shell LLM mode.

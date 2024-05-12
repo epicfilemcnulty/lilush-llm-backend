@@ -106,5 +106,5 @@ class CustomModelForCausalLM(MambaForCausalLM, GenerationMixin):
 
 def LoadMambaModel(model_dir):
     tokenizer = Tokenizer()
-    model = CustomModelForCausalLM.from_pretrained(model_dir).to('cuda')
+    model = CustomModelForCausalLM.from_pretrained(model_dir, torch_dtype=torch.bfloat16).to('cuda')
     return { "model": model, "tokenizer": tokenizer, "type": "mamba" }

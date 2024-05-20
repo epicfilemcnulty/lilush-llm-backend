@@ -26,10 +26,10 @@ def LoadExl2Model(model_dir, context_length=None, lora_dir=None):
         config.max_seq_len = context_length
 
     model = ExLlamaV2(config)
+    cache = ExLlamaV2Cache_Q4(model, lazy = True)
     print("Loading model: " + model_dir)
-    model.load()
+    model.load_autosplit(cache)
     tokenizer = ExLlamaV2Tokenizer(config)
-    cache = ExLlamaV2Cache_Q4(model, lazy = not model.loaded)
     lora = None
     if lora_dir is not None:
         lora = ExLlamaV2Lora.from_directory(model, lora_dir)

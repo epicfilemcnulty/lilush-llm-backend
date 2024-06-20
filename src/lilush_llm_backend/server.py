@@ -8,7 +8,7 @@ from bottle import Bottle, run, route, request, response
 bottle.BaseRequest.MEMFILE_MAX = 1024 * 1024 * 10
 
 from .loader import LoadExl2Model, LoadTfModel, LoadMambaModel
-from .generation import Exl2Query, TfQuery, MambaQuery
+from .generation import Exl2Query, Exl2QueryDynamic, TfQuery, MambaQuery
 
 models = {}
 app = Bottle()
@@ -30,9 +30,12 @@ def load_model():
         response.status = 400
         return {"error": "model_alias is required"}
     context_length = data.get('context_length')
+    cache_size = data.get('cache_size')
+    dynamic = data.get('dynamic', False)
+
     lora_dir = data.get('lora_dir')
     if model_type == "exl2":
-        models[model_alias] = LoadExl2Model(model_dir, context_length, lora_dir)
+        models[model_alias] = LoadExl2Model(model_dir=model_dir, context_length=context_length, lora_dir=lora_dir, cache_size=cache_size, dynamic=dynamic)
         return {"message": "model loaded"}
     if model_type == "tf":
         models[model_alias] = LoadTfModel(model_dir, context_length, lora_dir, trust_remote_code)
@@ -89,7 +92,13 @@ def complete():
 
     stop_reason = None
     if model_type == "exl2":
-        new_text, prompt_tokens, generated_tokens, stop_reason = Exl2Query(query, sampler, models[model_alias]["tokenizer"], models[model_alias]["generator"], models[model_alias]["lora"])
+        dynamic_generator = data.get('dynamic', False)
+        if dynamic_generator:
+            new_text = Exl2QueryDynamic(query, sampler, models[model_alias]["generator"])
+            prompt_tokens = 0
+            generated_tokens = 0
+        else:
+            new_text, prompt_tokens, generated_tokens, stop_reason = Exl2Query(query, sampler, models[model_alias]["tokenizer"], models[model_alias]["generator"], models[model_alias]["lora"])
     if model_type == "tf":
         new_text, prompt_tokens, generated_tokens = TfQuery(query, sampler, models[model_alias]["model"], models[model_alias]["tokenizer"])
     if model_type == "mamba":

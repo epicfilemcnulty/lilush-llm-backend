@@ -16,7 +16,7 @@ def Exl2Query(query, sampler, tokenizer, generator, lora):
     settings.min_p = sampler['min_p']
     settings.token_repetition_penalty = sampler['repetition_penalty']
 
-    input_ids = tokenizer.encode(query, add_bos = sampler['add_bos'], add_eos = sampler['add_eos'], encode_special_tokens = sampler['encode_special_tokens'])
+    input_ids = tokenizer.encode(query, add_bos = sampler['add_bos'], encode_special_tokens = sampler['encode_special_tokens'])
     prompt_tokens = input_ids.shape[-1]
  
     generator.set_stop_conditions(stop_conditions)
@@ -32,6 +32,26 @@ def Exl2Query(query, sampler, tokenizer, generator, lora):
 
     stop_reason = "eos" if eos else "length"
     return new_text, prompt_tokens, generated_tokens, stop_reason
+
+def Exl2QueryDynamic(query, sampler, generator):
+
+    stop_conditions = [tokenizer.eos_token_id]
+    if sampler['stop_conditions']:
+        for tid in sampler['stop_conditions']:
+            stop_conditions = stop_conditions + [ tid ]
+
+    settings = ExLlamaV2Sampler.Settings(temperature = sampler['temperature'],top_k = sampler['top_k'],top_p = sampler['top_p'],min_p = sampler['min_p'],token_repetition_penalty = sampler['repetition_penalty'])
+
+    output = generator.generate(
+        prompt=query,
+        gen_settings = settings,
+        max_new_tokens = sampler['max_new_tokens'],
+        add_bos = sampler['add_bos'],
+        encode_special_tokens = sampler['encode_special_tokens'],
+        stop_conditions = stop_conditions,
+        completion_only = True
+    )
+    return output
 
 def TfQuery(query, sampler, model, tokenizer):
  

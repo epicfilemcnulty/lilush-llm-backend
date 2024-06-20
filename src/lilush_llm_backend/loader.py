@@ -13,19 +13,22 @@ from exllamav2 import (
 )
 from exllamav2.generator import (
     ExLlamaV2StreamingGenerator,
+    ExLlamaV2DynamicGenerator,
     ExLlamaV2Sampler
 )
 
-def LoadExl2Model(model_dir, context_length=None, lora_dir=None):
+def LoadExl2Model(model_dir, context_length=None, cache_size=None, dynamic=False, lora_dir=None):
     # Initialize model and cache
-    config = ExLlamaV2Config()
-    config.model_dir = model_dir
-    config.prepare()
+    config = ExLlamaV2Config(model_dir)
+    model = ExLlamaV2(config)
     if context_length is not None and context_length != 0:
         config.max_seq_len = context_length
 
-    model = ExLlamaV2(config)
-    cache = ExLlamaV2Cache_Q4(model, lazy = True)
+    if cache_size is None:
+        c_size = config.max_seq_len
+    else:
+        c_size = cache_size
+    cache = ExLlamaV2Cache_Q4(model, max_seq_len = c_size, lazy = True)
     print("Loading model: " + model_dir)
     model.load_autosplit(cache)
     tokenizer = ExLlamaV2Tokenizer(config)
@@ -33,7 +36,10 @@ def LoadExl2Model(model_dir, context_length=None, lora_dir=None):
     if lora_dir is not None:
         lora = ExLlamaV2Lora.from_directory(model, lora_dir)
     # Initialize generator
-    generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
+    if dynamic:
+        generator = ExLlamaV2DynamicGenerator(model, cache, tokenizer)
+    else:
+        generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
     # Make sure CUDA is initialized so we can measure performance
     generator.warmup()
     return { "model": model, "generator": generator, "tokenizer": tokenizer, "cache": cache, "lora": lora, "type": "exl2" }
